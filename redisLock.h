@@ -142,7 +142,6 @@ magox_redis_lock( char key_name )
                     {
                         back_getset_time = atoi(reply->str);
                         freeReplyObject(reply);
-
                         if(back_getset_time==back_setnx_time)
                         {
                             return 0;
@@ -164,6 +163,8 @@ int
 magox_redis_unlock( char key_name )
 {
     _magox_redis_keep_alive();
+    int begin_time;
+    begin_time = get_now_millisecond_time();
 
     while ( get_now_millisecond_time() < (begin_time+get_millisecond_time(&doing_timeout)) )
     {
