@@ -1,7 +1,6 @@
 #ifndef MAGOX_REDIS_LOCK_H
 #define MAGOX_REDIS_LOCK_H
 
-
 #include <fuse.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,10 +24,11 @@
  */
 redisContext *_m_redis_c = NULL;
 
-
 /**
  * redis host and password
  */
+//是否验证密码
+int _m_redis_is_auth = 1;
 int _m_redis_port = 6379;
 char _m_redis_host[100] = { "127.0.0.1" };
 char _m_redis_password[100] = { "123456" };
@@ -222,13 +222,16 @@ _magox_redis_keep_alive()
     }
     else
     {
-        reply= redisCommand(_m_redis_c, "AUTH %s", _m_redis_password);
-        if (reply->type == REDIS_REPLY_ERROR) {
-            fprintf(stderr, "password is wrong [%s] check it right.\n",
-                    _m_redis_password);
-            exit(1);
+        if(_m_redis_is_auth)
+        {
+            reply= redisCommand(_m_redis_c, "AUTH %s", _m_redis_password);
+            if (reply->type == REDIS_REPLY_ERROR) {
+                fprintf(stderr, "password is wrong [%s] check it right.\n",
+                        _m_redis_password);
+                exit(1);
+            }
+            freeReplyObject(reply);
         }
-        freeReplyObject(reply);
     }
 }
 
