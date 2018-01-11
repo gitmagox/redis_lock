@@ -111,7 +111,7 @@ magox_redis_lock( char key_name )
         while ( get_now_millisecond_time() < ( begin_time+get_millisecond_time(&doing_timeout) ) )
         {
 
-            reply = redisCommand(_m_redis,"GET %s:lock:%s",_lock_prefix,this_lock_name);
+            reply = redisCommand(_m_redis,"GET %s:lock:%s",_lock_prefix,key_name);
 
             if( reply->type == REDIS_REPLY_NIL )
             {
@@ -131,7 +131,7 @@ magox_redis_lock( char key_name )
                 if(now_time>back_setnx_time+get_millisecond_time(&lock_timeout))
                 {
                     //doing getset;
-                    reply = redisCommand(_m_redis,"GETSET %s:lock:%s %d",_lock_prefix,this_lock_name,now_time);
+                    reply = redisCommand(_m_redis,"GETSET %s:lock:%s %d",_lock_prefix,key_name,now_time);
 
                     if( reply->type == REDIS_REPLY_NIL )
                     {
@@ -168,7 +168,7 @@ magox_redis_unlock( char key_name )
     while ( get_now_millisecond_time() < (begin_time+get_millisecond_time(&doing_timeout)) )
     {
         //doing unlock;
-        reply = redisCommand(_m_redis,"DEL %s:lock:%s",_lock_prefix,this_lock_name);
+        reply = redisCommand(_m_redis,"DEL %s:lock:%s",_lock_prefix,key_name);
         //del ok return
         if( reply!=NULL && reply->integer==1)
         {
