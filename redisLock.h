@@ -1,7 +1,6 @@
 #ifndef MAGOX_REDIS_LOCK_H
 #define MAGOX_REDIS_LOCK_H
 
-#include <fuse.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -32,6 +31,7 @@ int _m_redis_port = 6379;
 char _m_redis_host[100] = { "127.0.0.1" };
 char _m_redis_password[100] = { "123456" };
 char _lock_prefix[100] = { "magox_lock" };
+
 
 //取锁睡眠等待时间
 int _locking_sleep = 1000000;
