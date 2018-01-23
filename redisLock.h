@@ -18,7 +18,6 @@
 
 #include "hiredis.h"
 
-
 /**
  * Handle to the redis server.
  */
@@ -35,7 +34,7 @@ char _m_redis_password[100] = { "123456" };
 char _lock_prefix[100] = { "magox_lock" };
 
 //取锁睡眠等待时间
-int _locking_sleep = 1000;
+int _locking_sleep = 1000000;
 
 //取锁超时时间
 struct timeval doing_timeout = { 1,1000000 };
@@ -43,8 +42,9 @@ struct timeval doing_timeout = { 1,1000000 };
 void magox_redis_keep_alive();
 int get_millisecond_time(struct timeval *second_times);
 int get_now_millisecond_time();
-int magox_redis_lock( char key_name );
-int magox_redis_unlock( char key_name );
+int magox_redis_lock( char *key_name );
+int magox_redis_unlock( char *key_name );
+
 
 /**
  * get millisecond time
@@ -71,7 +71,7 @@ get_now_millisecond_time()
  * 上锁
  */
 int
-magox_redis_lock( char key_name )
+magox_redis_lock( char *key_name )
 {
     char setnx_millisecond_time_char[15];
 
@@ -96,9 +96,9 @@ magox_redis_lock( char key_name )
 
         snprintf(setnx_millisecond_time_char, 15, "%d", setnx_millisecond_time);
 
-        reply = redisCommand(_m_redis_c,"SETNX %s:lock:%s %d",_lock_prefix,key_name,setnx_millisecond_time);
+        reply = redisCommand(_m_redis_c,"SETNX %s:lock:%s \"%d\"",&_lock_prefix,key_name,setnx_millisecond_time);
 
-        if( reply->type == REDIS_REPLY_NIL )
+        if( reply->type == REDIS_REPLY_NIL)
         {
             freeReplyObject(reply);
             continue;
@@ -114,7 +114,7 @@ magox_redis_lock( char key_name )
         while ( get_now_millisecond_time() < ( begin_time+get_millisecond_time(&doing_timeout) ) )
         {
 
-            reply = redisCommand(_m_redis_c,"GET %s:lock:%s",_lock_prefix,key_name);
+            reply = redisCommand(_m_redis_c,"GET %s:lock:%s",&_lock_prefix,key_name);
 
             if( reply->type == REDIS_REPLY_NIL )
             {
@@ -134,7 +134,7 @@ magox_redis_lock( char key_name )
                 if(now_time>back_setnx_time+get_millisecond_time(&lock_timeout))
                 {
                     //doing getset;
-                    reply = redisCommand(_m_redis_c,"GETSET %s:lock:%s %d",_lock_prefix,key_name,now_time);
+                    reply = redisCommand(_m_redis_c,"GETSET %s:lock:%s %d",&_lock_prefix,key_name,now_time);
 
                     if( reply->type == REDIS_REPLY_NIL )
                     {
@@ -154,7 +154,7 @@ magox_redis_lock( char key_name )
                 }
 
             }
-            sleep(_locking_sleep);
+            usleep(_locking_sleep);
         }
     }
     return 1;
@@ -163,7 +163,7 @@ magox_redis_lock( char key_name )
  * 解锁
  */
 int
-magox_redis_unlock( char key_name )
+magox_redis_unlock( char *key_name )
 {
     redisReply *reply = NULL;
     magox_redis_keep_alive();
@@ -173,14 +173,14 @@ magox_redis_unlock( char key_name )
     while ( get_now_millisecond_time() < (begin_time+get_millisecond_time(&doing_timeout)) )
     {
         //doing unlock;
-        reply = redisCommand(_m_redis_c,"DEL %s:lock:%s",_lock_prefix,key_name);
+        reply = redisCommand(_m_redis_c,"DEL %s:lock:%s",&_lock_prefix,key_name);
         //del ok return
         if( reply!=NULL && reply->integer==1)
         {
             freeReplyObject(reply);
             return 0;
         }
-        sleep(_locking_sleep);
+        usleep(_locking_sleep);
     }
     return 1;
 }
