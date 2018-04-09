@@ -193,7 +193,7 @@ magox_redis_keep_alive()
 {
     redisReply *reply = NULL;
 
-    struct timeval timeout = { 1, 5000000 };
+    struct timeval timeout = { 5, 1000000 };
 
     if (_m_redis_c != NULL && _m_redis_c->errstr!= NULL )
     {
