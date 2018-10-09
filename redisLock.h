@@ -73,7 +73,6 @@ get_now_millisecond_time()
 int
 magox_redis_lock( char *key_name )
 {
-    char setnx_millisecond_time_char[15];
 
     redisReply *reply = NULL;
 
@@ -91,8 +90,6 @@ magox_redis_lock( char *key_name )
     while ( get_now_millisecond_time() < (begin_time+get_millisecond_time(&doing_timeout))){
         //try to get a lock
         setnx_millisecond_time = get_now_millisecond_time()+get_millisecond_time(&doing_timeout);
-
-        snprintf(setnx_millisecond_time_char, 15, "%d", setnx_millisecond_time);
 
         reply = redisCommand(_m_redis_c,"SETNX %s:lock:%s \"%d\"",&_lock_prefix,key_name,setnx_millisecond_time);
 
@@ -118,7 +115,7 @@ magox_redis_lock( char *key_name )
                 //doing getset;
                 reply = redisCommand(_m_redis_c,"GETSET %s:lock:%s %d",&_lock_prefix,key_name,now_time);
 
-                if( reply->type == REDIS_REPLY_NIL )
+                if( reply->type != REDIS_REPLY_NIL )
                 {
                     freeReplyObject(reply);
                     break;
@@ -137,7 +134,8 @@ magox_redis_unlock( char *key_name )
 {
     redisReply *reply = NULL;
     magox_redis_keep_alive();
-    int back_setnx_time;
+    int now_time,
+        back_setnx_time;
 
     reply = redisCommand(_m_redis_c,"GET %s:lock:%s",&_lock_prefix,key_name);
 
@@ -148,8 +146,14 @@ magox_redis_unlock( char *key_name )
 
         freeReplyObject(reply);
 
-        while ( get_now_millisecond_time() < back_setnx_time )
+        now_time = get_now_millisecond_time();
+
+        while ( now_time < back_setnx_time )
         {
+
+            if( now_time <(back_setnx_time-get_millisecond_time(&doing_timeout)) ){
+                break;
+            }
             //doing unlock;
             reply = redisCommand(_m_redis_c,"DEL %s:lock:%s",&_lock_prefix,key_name);
             //del ok return
@@ -158,6 +162,7 @@ magox_redis_unlock( char *key_name )
                 freeReplyObject(reply);
                 break;
             }
+            now_time = get_now_millisecond_time();
             continue;
         }
         
