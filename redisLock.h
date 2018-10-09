@@ -43,7 +43,7 @@ void magox_redis_keep_alive();
 int get_millisecond_time(struct timeval *second_times);
 int get_now_millisecond_time();
 int magox_redis_lock( char *key_name );
-int magox_redis_unlock( char *key_name );
+int magox_redis_unlock( char *key_name,int old_time );
 
 
 /**
@@ -121,7 +121,7 @@ magox_redis_lock( char *key_name )
 
                 if( reply!=NULL && reply->integer==1)
                 {
-                    result_value = setnx_millisecond_time
+                    result_value = setnx_millisecond_time;
                     freeReplyObject(reply);
                     break;
                 }
