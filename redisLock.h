@@ -34,7 +34,7 @@ char _lock_prefix[100] = { "magox_lock" };
 
 
 //取锁睡眠等待时间
-int _locking_sleep = 1000000;
+// int _locking_sleep = 1000000;
 
 //取锁超时时间
 struct timeval doing_timeout = { 1,1000000 };
@@ -83,8 +83,7 @@ magox_redis_lock( char *key_name )
     int     begin_time,
             setnx_millisecond_time,
             now_time,
-            back_setnx_time,
-            back_getset_time;
+            back_setnx_time;
 
     begin_time = get_now_millisecond_time();
     magox_redis_keep_alive();
@@ -138,7 +137,8 @@ magox_redis_unlock( char *key_name )
 {
     redisReply *reply = NULL;
     magox_redis_keep_alive();
-    int begin_time;
+    int begin_time,
+        back_setnx_time;
     begin_time = get_now_millisecond_time();
 
     reply = redisCommand(_m_redis_c,"GET %s:lock:%s",&_lock_prefix,key_name);
