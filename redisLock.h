@@ -140,8 +140,7 @@ magox_redis_unlock( char *key_name, int old_time)
 {
     redisReply *reply = NULL;
     magox_redis_keep_alive();
-    int now_time,
-        back_setnx_time;
+    int back_setnx_time;
 
     reply = redisCommand(_m_redis_c,"GET %s:lock:%s",&_lock_prefix,key_name);
 
