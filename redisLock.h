@@ -81,20 +81,24 @@ magox_redis_lock( char *key_name )
 
     int     begin_time,
             setnx_millisecond_time,
-            now_time,
-            back_setnx_time;
+            back_setnx_time,
+            lock_time,
+            result_value;
 
+    result_value = 0;
     begin_time = get_now_millisecond_time();
+    lock_time = get_millisecond_time(&doing_timeout);
     magox_redis_keep_alive();
 
-    while ( get_now_millisecond_time() < (begin_time+get_millisecond_time(&doing_timeout))){
+    while ( get_now_millisecond_time() < (begin_time+lock_time) ){
         //try to get a lock
-        setnx_millisecond_time = get_now_millisecond_time()+get_millisecond_time(&doing_timeout);
+        setnx_millisecond_time = get_now_millisecond_time()+lock_time;
 
         reply = redisCommand(_m_redis_c,"SETNX %s:lock:%s \"%d\"",&_lock_prefix,key_name,setnx_millisecond_time);
 
         if( reply!=NULL && reply->integer==1)
         {
+            result_value = setnx_millisecond_time;
             freeReplyObject(reply);
             break;
         }
@@ -107,16 +111,17 @@ magox_redis_lock( char *key_name )
 
             freeReplyObject(reply);
 
-            now_time = get_now_millisecond_time();
+            setnx_millisecond_time = get_now_millisecond_time()+lock_time;
 
             //if back time > timeout
-            if(now_time>back_setnx_time)
+            if(setnx_millisecond_time>back_setnx_time)
             {
                 //doing getset;
-                reply = redisCommand(_m_redis_c,"GETSET %s:lock:%s %d",&_lock_prefix,key_name,now_time);
+                reply = redisCommand(_m_redis_c,"GETSET %s:lock:%s %d",&_lock_prefix,key_name,setnx_millisecond_time);
 
-                if( reply->type != REDIS_REPLY_NIL )
+                if( reply!=NULL && reply->integer==1)
                 {
+                    result_value = setnx_millisecond_time
                     freeReplyObject(reply);
                     break;
                 }
@@ -124,13 +129,14 @@ magox_redis_lock( char *key_name )
         }
         continue;
     }
-    return 0;
+
+    return result_value;
 }
 /**
  * 解锁
  */
 int
-magox_redis_unlock( char *key_name )
+magox_redis_unlock( char *key_name, int old_time)
 {
     redisReply *reply = NULL;
     magox_redis_keep_alive();
@@ -139,33 +145,20 @@ magox_redis_unlock( char *key_name )
 
     reply = redisCommand(_m_redis_c,"GET %s:lock:%s",&_lock_prefix,key_name);
 
-
     if( reply!=NULL && reply->str!=NULL )
     {
         back_setnx_time = atoi(reply->str);
-
         freeReplyObject(reply);
-
-        now_time = get_now_millisecond_time();
-
-        while ( now_time < back_setnx_time )
-        {
-
-            if( now_time <(back_setnx_time-get_millisecond_time(&doing_timeout)) ){
-                break;
-            }
+        if(old_time==back_setnx_time){
             //doing unlock;
             reply = redisCommand(_m_redis_c,"DEL %s:lock:%s",&_lock_prefix,key_name);
             //del ok return
             if( reply!=NULL && reply->integer==1)
             {
                 freeReplyObject(reply);
-                break;
+                return 0;
             }
-            now_time = get_now_millisecond_time();
-            continue;
         }
-        
     }
     return 0;
 }
