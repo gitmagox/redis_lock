@@ -26,7 +26,7 @@ redisContext *_m_redis_c = NULL;
  * redis host and password
  */
 //是否验证密码
-int _m_redis_is_auth = 1;
+int _m_redis_is_auth = 0;
 int _m_redis_port = 6379;
 char _m_redis_host[100] = { "127.0.0.1" };
 char _m_redis_password[100] = { "123456" };
