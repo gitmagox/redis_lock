@@ -131,7 +131,7 @@ magox_redis_lock( char *key_name )
 
         if( reply!=NULL && reply->str!=NULL )
         {
-            trim(&(reply->str));
+            trim(reply->str);
             back_setnx_time = atoi(trim(reply->str));
 
             freeReplyObject(reply);
@@ -171,7 +171,7 @@ magox_redis_unlock( char *key_name, int old_time)
 
     if( reply!=NULL && reply->str!=NULL )
     {
-        trim(&(reply->str));
+        trim(reply->str);
         back_setnx_time = atoi(trim(reply->str));
         freeReplyObject(reply);
         if(old_time==back_setnx_time){
