@@ -50,7 +50,7 @@ void ltrim ( char *s )
 {
     char *p;
     p = s;
-    while ( *p == ' ' || *p == '\t'  || *p=='\"' ) {*p++;}
+    while ( *p == ' ' || *p == '\t'  || *p == '\"' ){p++;}
     strcpy ( s,p );
 }
  
