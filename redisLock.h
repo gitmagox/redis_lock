@@ -46,6 +46,30 @@ int magox_redis_lock( char *key_name );
 int magox_redis_unlock( char *key_name,int old_time );
 
 
+void ltrim ( char *s )
+{
+    char *p;
+    p = s;
+    while ( *p == ' ' || *p == '\t'  || *p=='\"' ) {*p++;}
+    strcpy ( s,p );
+}
+ 
+void rtrim ( char *s )
+{
+    int i;
+ 
+    i = strlen ( s )-1;
+    while ( ( s[i] == ' ' || s[i] == '\t' || s[i] == '\"' ) && i >= 0 ) {i--;};
+    s[i+1] = '\0';
+}
+ 
+void trim ( char *s )
+{
+    ltrim ( s );
+    rtrim ( s );
+}
+
+
 /**
  * get millisecond time
  * 取具体的毫秒数
@@ -107,7 +131,7 @@ magox_redis_lock( char *key_name )
 
         if( reply!=NULL && reply->str!=NULL )
         {
-            back_setnx_time = atoi(reply->str);
+            back_setnx_time = atoi(trim(reply->str));
 
             freeReplyObject(reply);
 
@@ -146,7 +170,7 @@ magox_redis_unlock( char *key_name, int old_time)
 
     if( reply!=NULL && reply->str!=NULL )
     {
-        back_setnx_time = atoi(reply->str);
+        back_setnx_time = atoi(trim(reply->str));
         freeReplyObject(reply);
         if(old_time==back_setnx_time){
             //doing unlock;
